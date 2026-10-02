@@ -26,7 +26,7 @@ public class ConsoleUI {
             System.out.println("3. Создать заявку");
             System.out.println("4. Показать заявки");
             System.out.println("5. Поменять статус заявки");
-            System.out.println("6. Редактировать заявку");
+            System.out.println("6. Редактировать новую заявку");
             System.out.println("7. Удалить новую заявку");
             System.out.println("8. Найти заявки по статусу");
             System.out.println("0. Выход");
