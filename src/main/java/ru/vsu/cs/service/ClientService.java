@@ -2,6 +2,7 @@ package ru.vsu.cs.service;
 
 import ru.vsu.cs.domain.Client;
 import ru.vsu.cs.repository.ClientRepository;
+import ru.vsu.cs.validation.InputValidator;
 
 import java.util.List;
 
@@ -14,20 +15,14 @@ public class ClientService {
     }
 
     public Client createClient(String name, String phone) {
-        if(name == null || name.isBlank()) {
-            throw new IllegalArgumentException("Имя клиента не должно быть пустым");
-        }
-        if(phone == null || phone.isBlank()) {
-            throw new IllegalArgumentException("Телефон клиента не должен быть пустым");
-        }
+        InputValidator.validateClient(name, phone);
         Client client = new Client(nextId, name, phone);
         clientRepository.save(client);
         nextId++;
         return client;
-
     }
 
-    public List<Client> findAllClients(){
+    public List<Client> findAllClients() {
         return clientRepository.findAll();
     }
 }

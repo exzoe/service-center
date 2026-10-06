@@ -22,5 +22,4 @@ public class Client {
     public String getPhone() {
         return phone;
     }
-
 }

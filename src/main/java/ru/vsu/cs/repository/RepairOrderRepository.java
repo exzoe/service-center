@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface RepairOrderRepository {
-
     void save(RepairOrder order);
 
     Optional<RepairOrder> findById(long id);
@@ -14,5 +13,4 @@ public interface RepairOrderRepository {
     List<RepairOrder> findAll();
 
     boolean deleteById(long id);
-
 }

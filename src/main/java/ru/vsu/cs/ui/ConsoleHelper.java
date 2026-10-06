@@ -3,6 +3,8 @@ package ru.vsu.cs.ui;
 import ru.vsu.cs.domain.Client;
 import ru.vsu.cs.domain.RepairOrder;
 import ru.vsu.cs.domain.RepairStatus;
+import ru.vsu.cs.exception.AppException;
+import ru.vsu.cs.exception.ErrorCode;
 
 import java.util.List;
 import java.util.Scanner;
@@ -38,11 +40,11 @@ public class ConsoleHelper {
         try {
             choice = Integer.parseInt(scanner.nextLine().trim());
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException(
+            throw new AppException(ErrorCode.VALIDATION,
                     "Номер статуса должен быть целым числом от 1 до " + statuses.length);
         }
         if (choice < 1 || choice > statuses.length) {
-            throw new IllegalArgumentException(
+            throw new AppException(ErrorCode.VALIDATION,
                     "Выберите номер статуса от 1 до " + statuses.length);
         }
         return statuses[choice - 1];

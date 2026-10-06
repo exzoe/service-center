@@ -1,82 +1,68 @@
 package ru.vsu.cs.ui;
 
-import ru.vsu.cs.service.ClientService;
-import ru.vsu.cs.service.RepairOrderService;
+import ru.vsu.cs.exception.AppException;
 import ru.vsu.cs.ui.command.Command;
-import ru.vsu.cs.ui.command.AddClientCommand;
-import ru.vsu.cs.ui.command.ShowClientsCommand;
-import ru.vsu.cs.ui.command.CreateOrderCommand;
-import ru.vsu.cs.ui.command.ShowOrdersCommand;
-import ru.vsu.cs.ui.command.ChangeOrderStatusCommand;
-import ru.vsu.cs.ui.command.UpdateOrderCommand;
-import ru.vsu.cs.ui.command.DeleteOrderCommand;
-import ru.vsu.cs.ui.command.FindOrdersByStatusCommand;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Scanner;
 
 public class ConsoleUI {
-    private final ConsoleHelper helper;
-    private final Map<String, Command> commands = new HashMap<>();
+    private static final String EXIT_COMMAND = "exit";
 
-    public ConsoleUI(ClientService clientService, RepairOrderService repairOrderService) {
-        helper = new ConsoleHelper(new Scanner(System.in));
-        commands.put("1", new AddClientCommand(clientService, helper));
-        commands.put("2", new ShowClientsCommand(clientService, helper));
-        commands.put("3", new CreateOrderCommand(repairOrderService, helper));
-        commands.put("4", new ShowOrdersCommand(repairOrderService, helper));
-        commands.put("5", new ChangeOrderStatusCommand(repairOrderService, helper));
-        commands.put("6", new UpdateOrderCommand(repairOrderService, helper));
-        commands.put("7", new DeleteOrderCommand(repairOrderService, helper));
-        commands.put("8", new FindOrdersByStatusCommand(repairOrderService, helper));
+    private final ConsoleHelper helper;
+    private final Map<String, MenuEntry> commands = new LinkedHashMap<>();
+
+    private record MenuEntry(String description, Command command) {
+    }
+
+    public ConsoleUI(ConsoleHelper helper) {
+        this.helper = helper;
+    }
+
+    public void register(String name, String description, Command command) {
+        commands.put(name, new MenuEntry(description, command));
     }
 
     public void run() {
-        while (true) {
+        boolean running = true;
+        while (running) {
             printMenu();
 
             String choice;
             try {
-                choice = helper.readLine("Выберите пункт меню:").trim();
+                choice = helper.readLine("Введите команду:").trim();
             } catch (NoSuchElementException e) {
-                return;
+                running = false;
+                continue;
             }
-            if ("0".equals(choice)) {
-                return;
+            if (EXIT_COMMAND.equals(choice)) {
+                running = false;
+                continue;
             }
 
-            Command command = commands.get(choice);
-            if (command == null) {
+            MenuEntry entry = commands.get(choice);
+            if (entry == null) {
                 System.out.println("Неизвестная команда");
                 continue;
             }
 
             try {
-                command.execute();
+                entry.command().execute();
             } catch (NumberFormatException e) {
                 System.out.println("ID должен быть целым числом в диапазоне long");
-            } catch (IllegalArgumentException e) {
-                System.out.println(e.getMessage());
-            } catch (IllegalStateException e) {
+            } catch (AppException e) {
                 System.out.println(e.getMessage());
             } catch (NoSuchElementException e) {
                 System.out.println("Ввод завершён");
-                return;
+                running = false;
             }
         }
     }
 
     private void printMenu() {
-        System.out.println("1. Добавить клиента");
-        System.out.println("2. Показать клиентов");
-        System.out.println("3. Создать заявку");
-        System.out.println("4. Показать заявки");
-        System.out.println("5. Поменять статус заявки");
-        System.out.println("6. Редактировать новую заявку");
-        System.out.println("7. Удалить новую заявку");
-        System.out.println("8. Найти заявки по статусу");
-        System.out.println("0. Выход");
+        commands.forEach((name, entry) ->
+                System.out.println(name + " — " + entry.description()));
+        System.out.println(EXIT_COMMAND + " — Выход");
     }
 }

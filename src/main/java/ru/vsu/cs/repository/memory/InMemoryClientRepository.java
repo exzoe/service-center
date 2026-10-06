@@ -3,10 +3,13 @@ package ru.vsu.cs.repository.memory;
 import ru.vsu.cs.domain.Client;
 import ru.vsu.cs.repository.ClientRepository;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 public class InMemoryClientRepository implements ClientRepository {
-
     private final Map<Long, Client> clients = new HashMap<>();
 
     @Override
@@ -26,7 +29,7 @@ public class InMemoryClientRepository implements ClientRepository {
 
     @Override
     public boolean deleteById(long id) {
-        if(clients.containsKey(id)) {
+        if (clients.containsKey(id)) {
             clients.remove(id);
             return true;
         }
