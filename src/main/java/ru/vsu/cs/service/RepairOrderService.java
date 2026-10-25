@@ -5,8 +5,10 @@ import ru.vsu.cs.domain.RepairOrder;
 import ru.vsu.cs.domain.RepairStatus;
 import ru.vsu.cs.exception.AppException;
 import ru.vsu.cs.exception.ErrorCode;
+import ru.vsu.cs.id.IdProvider;
 import ru.vsu.cs.repository.ClientRepository;
 import ru.vsu.cs.repository.RepairOrderRepository;
+import ru.vsu.cs.validation.InputValidator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,12 +16,14 @@ import java.util.List;
 public class RepairOrderService {
     private final ClientRepository clientRepository;
     private final RepairOrderRepository repairOrderRepository;
-    private long nextId = 1;
+    private final IdProvider idProvider;
 
     public RepairOrderService(ClientRepository clientRepository,
-                              RepairOrderRepository repairOrderRepository) {
+                              RepairOrderRepository repairOrderRepository,
+                              IdProvider idProvider) {
         this.clientRepository = clientRepository;
         this.repairOrderRepository = repairOrderRepository;
+        this.idProvider = idProvider;
     }
 
     private RepairOrder orderFindById(long orderId) {
@@ -33,9 +37,9 @@ public class RepairOrderService {
                 .orElseThrow(() -> new AppException(
                         ErrorCode.NOT_FOUND, "Клиент не найден: ID " + clientId));
 
-        RepairOrder order = new RepairOrder(nextId, client, device, problemDescription);
+        InputValidator.validateOrderDetails(device, problemDescription);
+        RepairOrder order = new RepairOrder(idProvider.nextId(), client, device, problemDescription);
         repairOrderRepository.save(order);
-        nextId++;
 
         return order;
     }
@@ -97,6 +101,7 @@ public class RepairOrderService {
         if (order.getStatus() != RepairStatus.NEW) {
             throw new AppException(ErrorCode.BUSINESS_RULE, "Менять описание можно только у новых заявок");
         }
+        InputValidator.validateOrderDetails(device, problemDescription);
         order.updateDetails(device, problemDescription);
         repairOrderRepository.save(order);
         return order;

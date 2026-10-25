@@ -1,7 +1,5 @@
-package ru.vsu.cs;
+package ru.vsu.cs.factory;
 
-import ru.vsu.cs.repository.memory.InMemoryClientRepository;
-import ru.vsu.cs.repository.memory.InMemoryRepairOrderRepository;
 import ru.vsu.cs.service.ClientService;
 import ru.vsu.cs.service.RepairOrderService;
 import ru.vsu.cs.ui.ConsoleHelper;
@@ -17,16 +15,11 @@ import ru.vsu.cs.ui.command.UpdateOrderCommand;
 
 import java.util.Scanner;
 
-public final class ApplicationFactory {
-    private ApplicationFactory() {
+public final class ConsoleUIFactory {
+    private ConsoleUIFactory() {
     }
 
-    public static ConsoleUI create() {
-        InMemoryClientRepository clientRepository = new InMemoryClientRepository();
-        InMemoryRepairOrderRepository repairOrderRepository = new InMemoryRepairOrderRepository();
-        ClientService clientService = new ClientService(clientRepository);
-        RepairOrderService repairOrderService =
-                new RepairOrderService(clientRepository, repairOrderRepository);
+    public static ConsoleUI create(ClientService clientService, RepairOrderService repairOrderService) {
         ConsoleHelper helper = new ConsoleHelper(new Scanner(System.in));
         ConsoleUI ui = new ConsoleUI(helper);
 
