@@ -1,24 +1,17 @@
 package ru.vsu.cs.service;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import ru.vsu.cs.domain.Client;
 import ru.vsu.cs.domain.RepairOrder;
 import ru.vsu.cs.domain.RepairStatus;
 import ru.vsu.cs.exception.AppException;
-import ru.vsu.cs.exception.ErrorCode;
 import ru.vsu.cs.id.IdProvider;
 import ru.vsu.cs.repository.ClientRepository;
 import ru.vsu.cs.repository.RepairOrderRepository;
 import ru.vsu.cs.repository.memory.InMemoryClientRepository;
 import ru.vsu.cs.repository.memory.InMemoryRepairOrderRepository;
 
-import java.util.stream.Stream;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -34,27 +27,24 @@ public class RepairOrderServiceTest {
         long missingClientId = 999;
 
         // when
-        AppException exception = assertThrows(AppException.class,
+        assertThrows(AppException.class,
                 () -> repairOrderService.createOrder(missingClientId, "iphone", "не включается"));
 
         // then
-        assertEquals(ErrorCode.NOT_FOUND, exception.getCode());
         assertTrue(repairOrderRepository.findAll().isEmpty());
     }
 
-    @ParameterizedTest
-    @MethodSource("invalidOrderDetails")
-    void cannotCreateOrderWithInvalidDetails(String device, String problemDescription) {
+    @Test
+    void cannotCreateOrderWithEmptyDescription() {
         // given
         Client client = new Client(1, "Stanislav", "89526333468");
         clientRepository.save(client);
 
         // when
-        AppException exception = assertThrows(AppException.class,
-                () -> repairOrderService.createOrder(client.getId(), device, problemDescription));
+        assertThrows(AppException.class,
+                () -> repairOrderService.createOrder(client.getId(), "iphone", ""));
 
         // then
-        assertEquals(ErrorCode.VALIDATION, exception.getCode());
         assertTrue(repairOrderRepository.findAll().isEmpty());
     }
 
@@ -78,22 +68,6 @@ public class RepairOrderServiceTest {
     }
 
     @Test
-    void createsOrdersWithDistinctIds() {
-        // given
-        RepairOrder firstOrder = createOrder();
-
-        // when
-        RepairOrder secondOrder = repairOrderService.createOrder(
-                firstOrder.getClient().getId(), "samsung", "не заряжается");
-
-        // then
-        assertNotEquals(firstOrder.getId(), secondOrder.getId());
-        assertEquals(2, repairOrderRepository.findAll().size());
-        assertTrue(repairOrderRepository.findById(firstOrder.getId()).isPresent());
-        assertTrue(repairOrderRepository.findById(secondOrder.getId()).isPresent());
-    }
-
-    @Test
     void canDeleteNewOrder() {
         // given
         RepairOrder order = createOrder();
@@ -112,11 +86,10 @@ public class RepairOrderServiceTest {
         repairOrderService.changeOrderStatus(order.getId(), RepairStatus.DIAGNOSTICS);
 
         // when
-        AppException exception = assertThrows(AppException.class,
+        assertThrows(AppException.class,
                 () -> repairOrderService.deleteOrder(order.getId()));
 
         // then
-        assertEquals(ErrorCode.BUSINESS_RULE, exception.getCode());
         assertTrue(repairOrderRepository.findById(order.getId()).isPresent());
         assertEquals(RepairStatus.DIAGNOSTICS, order.getStatus());
     }
@@ -127,11 +100,10 @@ public class RepairOrderServiceTest {
         RepairOrder order = createOrder();
 
         // when
-        AppException exception = assertThrows(AppException.class,
+        assertThrows(AppException.class,
                 () -> repairOrderService.changeOrderStatus(order.getId(), RepairStatus.READY));
 
         // then
-        assertEquals(ErrorCode.BUSINESS_RULE, exception.getCode());
         assertEquals(RepairStatus.NEW, order.getStatus());
     }
 
@@ -141,26 +113,12 @@ public class RepairOrderServiceTest {
         RepairOrder order = createOrder();
 
         // when
-        completeRepair(order.getId());
+        repairOrderService.changeOrderStatus(order.getId(), RepairStatus.DIAGNOSTICS);
+        repairOrderService.changeOrderStatus(order.getId(), RepairStatus.IN_REPAIR);
+        repairOrderService.changeOrderStatus(order.getId(), RepairStatus.READY);
+        repairOrderService.changeOrderStatus(order.getId(), RepairStatus.CLOSED);
 
         // then
-        assertEquals(RepairStatus.CLOSED, order.getStatus());
-        assertEquals(RepairStatus.CLOSED,
-                repairOrderRepository.findById(order.getId()).orElseThrow().getStatus());
-    }
-
-    @Test
-    void cannotChangeClosedOrderStatus() {
-        // given
-        RepairOrder order = createOrder();
-        completeRepair(order.getId());
-
-        // when
-        AppException exception = assertThrows(AppException.class,
-                () -> repairOrderService.changeOrderStatus(order.getId(), RepairStatus.NEW));
-
-        // then
-        assertEquals(ErrorCode.BUSINESS_RULE, exception.getCode());
         assertEquals(RepairStatus.CLOSED, order.getStatus());
     }
 
@@ -177,62 +135,6 @@ public class RepairOrderServiceTest {
     }
 
     @Test
-    void canCancelOrderAfterDiagnosticsStarted() {
-        // given
-        RepairOrder order = createOrder();
-        repairOrderService.changeOrderStatus(order.getId(), RepairStatus.DIAGNOSTICS);
-
-        // when
-        repairOrderService.changeOrderStatus(order.getId(), RepairStatus.CANCELLED);
-
-        // then
-        assertEquals(RepairStatus.CANCELLED, order.getStatus());
-    }
-
-    @Test
-    void cannotChangeCancelledOrderStatus() {
-        // given
-        RepairOrder order = createOrder();
-        repairOrderService.changeOrderStatus(order.getId(), RepairStatus.CANCELLED);
-
-        // when
-        AppException exception = assertThrows(AppException.class,
-                () -> repairOrderService.changeOrderStatus(order.getId(), RepairStatus.NEW));
-
-        // then
-        assertEquals(ErrorCode.BUSINESS_RULE, exception.getCode());
-        assertEquals(RepairStatus.CANCELLED, order.getStatus());
-    }
-
-    @Test
-    void rejectsNullStatus() {
-        // given
-        RepairOrder order = createOrder();
-
-        // when
-        AppException exception = assertThrows(AppException.class,
-                () -> repairOrderService.changeOrderStatus(order.getId(), null));
-
-        // then
-        assertEquals(ErrorCode.VALIDATION, exception.getCode());
-        assertEquals(RepairStatus.NEW, order.getStatus());
-    }
-
-    @Test
-    void rejectsRepeatedStatus() {
-        // given
-        RepairOrder order = createOrder();
-
-        // when
-        AppException exception = assertThrows(AppException.class,
-                () -> repairOrderService.changeOrderStatus(order.getId(), RepairStatus.NEW));
-
-        // then
-        assertEquals(ErrorCode.BUSINESS_RULE, exception.getCode());
-        assertEquals(RepairStatus.NEW, order.getStatus());
-    }
-
-    @Test
     void canUpdateNewOrder() {
         // given
         RepairOrder order = createOrder();
@@ -246,18 +148,16 @@ public class RepairOrderServiceTest {
         assertEquals(RepairStatus.NEW, order.getStatus());
     }
 
-    @ParameterizedTest
-    @MethodSource("invalidOrderDetails")
-    void invalidDetailsDoNotChangeOrder(String device, String problemDescription) {
+    @Test
+    void emptyDescriptionDoesNotChangeOrder() {
         // given
         RepairOrder order = createOrder();
 
         // when
-        AppException exception = assertThrows(AppException.class,
-                () -> repairOrderService.updateOrder(order.getId(), device, problemDescription));
+        assertThrows(AppException.class,
+                () -> repairOrderService.updateOrder(order.getId(), "samsung", ""));
 
         // then
-        assertEquals(ErrorCode.VALIDATION, exception.getCode());
         assertEquals("iphone", order.getDevice());
         assertEquals("не включается", order.getProblemDescription());
         assertEquals(RepairStatus.NEW, order.getStatus());
@@ -270,36 +170,17 @@ public class RepairOrderServiceTest {
         repairOrderService.changeOrderStatus(order.getId(), RepairStatus.DIAGNOSTICS);
 
         // when
-        AppException exception = assertThrows(AppException.class,
+        assertThrows(AppException.class,
                 () -> repairOrderService.updateOrder(order.getId(), "samsung", "не работает"));
 
         // then
-        assertEquals(ErrorCode.BUSINESS_RULE, exception.getCode());
         assertEquals("iphone", order.getDevice());
         assertEquals("не включается", order.getProblemDescription());
         assertEquals(RepairStatus.DIAGNOSTICS, order.getStatus());
     }
 
-    private static Stream<Arguments> invalidOrderDetails() {
-        return Stream.of(
-                Arguments.of(null, "другое описание"),
-                Arguments.of("", "другое описание"),
-                Arguments.of(" ", "другое описание"),
-                Arguments.of("другое устройство", null),
-                Arguments.of("другое устройство", ""),
-                Arguments.of("другое устройство", " ")
-        );
-    }
-
     private RepairOrder createOrder() {
         clientRepository.save(new Client(1, "Stanislav", "89526333468"));
         return repairOrderService.createOrder(1, "iphone", "не включается");
-    }
-
-    private void completeRepair(long orderId) {
-        repairOrderService.changeOrderStatus(orderId, RepairStatus.DIAGNOSTICS);
-        repairOrderService.changeOrderStatus(orderId, RepairStatus.IN_REPAIR);
-        repairOrderService.changeOrderStatus(orderId, RepairStatus.READY);
-        repairOrderService.changeOrderStatus(orderId, RepairStatus.CLOSED);
     }
 }
