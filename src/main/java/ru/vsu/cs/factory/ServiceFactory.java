@@ -18,7 +18,7 @@ public final class ServiceFactory {
     public static Services create() {
         ClientRepository clientRepository = new InMemoryClientRepository();
         RepairOrderRepository repairOrderRepository = new InMemoryRepairOrderRepository();
-        ClientService clientService = new ClientService(clientRepository, new IdProvider());
+        ClientService clientService = new ClientService(clientRepository);
         RepairOrderService repairOrderService =
                 new RepairOrderService(clientRepository, repairOrderRepository, new IdProvider());
         return new Services(clientService, repairOrderService);

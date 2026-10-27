@@ -37,8 +37,7 @@ public class RepairOrderServiceTest {
     @Test
     void cannotCreateOrderWithEmptyDescription() {
         // given
-        Client client = new Client(1, "Stanislav", "89526333468");
-        clientRepository.save(client);
+        Client client = clientRepository.create("Stanislav", "89526333468");
 
         // when
         assertThrows(AppException.class,
@@ -51,8 +50,7 @@ public class RepairOrderServiceTest {
     @Test
     void createsAndSavesOrderForExistingClient() {
         // given
-        Client client = new Client(1, "Stanislav", "89526333468");
-        clientRepository.save(client);
+        Client client = clientRepository.create("Stanislav", "89526333468");
 
         // when
         RepairOrder order = repairOrderService.createOrder(client.getId(), "iphone", "не запускается");
@@ -180,7 +178,7 @@ public class RepairOrderServiceTest {
     }
 
     private RepairOrder createOrder() {
-        clientRepository.save(new Client(1, "Stanislav", "89526333468"));
-        return repairOrderService.createOrder(1, "iphone", "не включается");
+        Client client = clientRepository.create("Stanislav", "89526333468");
+        return repairOrderService.createOrder(client.getId(), "iphone", "не включается");
     }
 }
