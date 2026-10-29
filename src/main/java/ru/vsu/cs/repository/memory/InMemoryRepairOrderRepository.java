@@ -2,6 +2,8 @@ package ru.vsu.cs.repository.memory;
 
 import ru.vsu.cs.domain.RepairOrder;
 import ru.vsu.cs.repository.RepairOrderRepository;
+import ru.vsu.cs.domain.Client;
+import ru.vsu.cs.id.IdProvider;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,9 +13,26 @@ import java.util.Optional;
 
 public class InMemoryRepairOrderRepository implements RepairOrderRepository {
     private final Map<Long, RepairOrder> orders = new HashMap<>();
+    private final IdProvider idProvider = new IdProvider();
 
     @Override
-    public void save(RepairOrder order) {
+    public RepairOrder create(
+            Client client, String device, String problemDescription) {
+
+        RepairOrder order = new RepairOrder(
+                idProvider.nextId(), client, device, problemDescription);
+
+        orders.put(order.getId(), order);
+        return order;
+    }
+
+    @Override
+    public void update(RepairOrder order) {
+        if (!orders.containsKey(order.getId())) {
+            throw new IllegalStateException(
+                    "Заявка не найдена: " + order.getId());
+        }
+
         orders.put(order.getId(), order);
     }
 

@@ -5,7 +5,6 @@ import ru.vsu.cs.domain.Client;
 import ru.vsu.cs.domain.RepairOrder;
 import ru.vsu.cs.domain.RepairStatus;
 import ru.vsu.cs.exception.AppException;
-import ru.vsu.cs.id.IdProvider;
 import ru.vsu.cs.repository.ClientRepository;
 import ru.vsu.cs.repository.RepairOrderRepository;
 import ru.vsu.cs.repository.memory.InMemoryClientRepository;
@@ -18,8 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class RepairOrderServiceTest {
     private final ClientRepository clientRepository = new InMemoryClientRepository();
     private final RepairOrderRepository repairOrderRepository = new InMemoryRepairOrderRepository();
-    private final RepairOrderService repairOrderService =
-            new RepairOrderService(clientRepository, repairOrderRepository, new IdProvider());
+    private final RepairOrderService repairOrderService = new RepairOrderService(clientRepository, repairOrderRepository);
 
     @Test
     void cannotCreateOrderForMissingClient() {

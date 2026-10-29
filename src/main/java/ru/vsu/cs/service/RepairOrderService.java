@@ -5,7 +5,6 @@ import ru.vsu.cs.domain.RepairOrder;
 import ru.vsu.cs.domain.RepairStatus;
 import ru.vsu.cs.exception.AppException;
 import ru.vsu.cs.exception.ErrorCode;
-import ru.vsu.cs.id.IdProvider;
 import ru.vsu.cs.repository.ClientRepository;
 import ru.vsu.cs.repository.RepairOrderRepository;
 import ru.vsu.cs.validation.InputValidator;
@@ -16,14 +15,10 @@ import java.util.List;
 public class RepairOrderService {
     private final ClientRepository clientRepository;
     private final RepairOrderRepository repairOrderRepository;
-    private final IdProvider idProvider;
 
-    public RepairOrderService(ClientRepository clientRepository,
-                              RepairOrderRepository repairOrderRepository,
-                              IdProvider idProvider) {
+    public RepairOrderService(ClientRepository clientRepository, RepairOrderRepository repairOrderRepository) {
         this.clientRepository = clientRepository;
         this.repairOrderRepository = repairOrderRepository;
-        this.idProvider = idProvider;
     }
 
     private RepairOrder orderFindById(long orderId) {
@@ -38,17 +33,15 @@ public class RepairOrderService {
                         ErrorCode.NOT_FOUND, "Клиент не найден: ID " + clientId));
 
         InputValidator.validateOrderDetails(device, problemDescription);
-        RepairOrder order = new RepairOrder(idProvider.nextId(), client, device, problemDescription);
-        repairOrderRepository.save(order);
 
-        return order;
+        return repairOrderRepository.create(client, device, problemDescription);
     }
 
     public RepairOrder changeOrderStatus(long orderId, RepairStatus newStatus) {
         RepairOrder order = orderFindById(orderId);
         checkStatusTransition(order.getStatus(), newStatus);
         order.setStatus(newStatus);
-        repairOrderRepository.save(order);
+        repairOrderRepository.update(order);
         return order;
     }
 
@@ -103,7 +96,7 @@ public class RepairOrderService {
         }
         InputValidator.validateOrderDetails(device, problemDescription);
         order.updateDetails(device, problemDescription);
-        repairOrderRepository.save(order);
+        repairOrderRepository.update(order);
         return order;
     }
 }
