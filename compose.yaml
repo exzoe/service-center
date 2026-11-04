@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: service_center
+      POSTGRES_USER: service_user
+      POSTGRES_PASSWORD: study_pass
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U service_user -d service_center"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/service_center
+      DB_USER: service_user
+      DB_PASSWORD: study_pass
+    stdin_open: true
+    tty: true
+
+volumes:
+  postgres-data:

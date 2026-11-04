@@ -5,7 +5,6 @@ import ru.vsu.cs.domain.Client;
 import ru.vsu.cs.domain.RepairOrder;
 import ru.vsu.cs.domain.RepairStatus;
 import ru.vsu.cs.exception.AppException;
-import ru.vsu.cs.id.IdProvider;
 import ru.vsu.cs.repository.ClientRepository;
 import ru.vsu.cs.repository.RepairOrderRepository;
 import ru.vsu.cs.repository.memory.InMemoryClientRepository;
@@ -18,8 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class RepairOrderServiceTest {
     private final ClientRepository clientRepository = new InMemoryClientRepository();
     private final RepairOrderRepository repairOrderRepository = new InMemoryRepairOrderRepository();
-    private final RepairOrderService repairOrderService =
-            new RepairOrderService(clientRepository, repairOrderRepository, new IdProvider());
+    private final RepairOrderService repairOrderService = new RepairOrderService(clientRepository, repairOrderRepository);
 
     @Test
     void cannotCreateOrderForMissingClient() {
@@ -37,8 +35,7 @@ public class RepairOrderServiceTest {
     @Test
     void cannotCreateOrderWithEmptyDescription() {
         // given
-        Client client = new Client(1, "Stanislav", "89526333468");
-        clientRepository.save(client);
+        Client client = clientRepository.create("Stanislav", "89526333468");
 
         // when
         assertThrows(AppException.class,
@@ -51,8 +48,7 @@ public class RepairOrderServiceTest {
     @Test
     void createsAndSavesOrderForExistingClient() {
         // given
-        Client client = new Client(1, "Stanislav", "89526333468");
-        clientRepository.save(client);
+        Client client = clientRepository.create("Stanislav", "89526333468");
 
         // when
         RepairOrder order = repairOrderService.createOrder(client.getId(), "iphone", "не запускается");
@@ -180,7 +176,7 @@ public class RepairOrderServiceTest {
     }
 
     private RepairOrder createOrder() {
-        clientRepository.save(new Client(1, "Stanislav", "89526333468"));
-        return repairOrderService.createOrder(1, "iphone", "не включается");
+        Client client = clientRepository.create("Stanislav", "89526333468");
+        return repairOrderService.createOrder(client.getId(), "iphone", "не включается");
     }
 }

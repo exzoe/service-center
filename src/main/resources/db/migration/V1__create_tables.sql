@@ -1,0 +1,13 @@
+CREATE TABLE clients (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name TEXT NOT NULL,
+    phone TEXT NOT NULL
+);
+
+CREATE TABLE repair_orders (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    client_id BIGINT NOT NULL REFERENCES clients(id),
+    device TEXT NOT NULL,
+    problem_description TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'NEW'
+);

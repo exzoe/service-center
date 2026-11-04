@@ -2,7 +2,6 @@ package ru.vsu.cs.service;
 
 import org.junit.jupiter.api.Test;
 import ru.vsu.cs.domain.Client;
-import ru.vsu.cs.id.IdProvider;
 import ru.vsu.cs.repository.ClientRepository;
 import ru.vsu.cs.repository.memory.InMemoryClientRepository;
 
@@ -12,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ClientServiceTest {
     private final ClientRepository clientRepository = new InMemoryClientRepository();
-    private final ClientService clientService = new ClientService(clientRepository, new IdProvider());
+    private final ClientService clientService = new ClientService(clientRepository);
 
     @Test
     void createsClientsWithDistinctIds() {
