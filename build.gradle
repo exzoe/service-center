@@ -21,6 +21,8 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     implementation 'org.postgresql:postgresql:42.7.14'
+    implementation 'org.flywaydb:flyway-core:13.12.0'
+    implementation 'org.flywaydb:flyway-database-postgresql:13.12.0'
 }
 
 test {

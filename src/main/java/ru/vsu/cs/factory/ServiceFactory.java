@@ -5,6 +5,7 @@ import ru.vsu.cs.repository.RepairOrderRepository;
 import ru.vsu.cs.config.ConfigReader;
 import ru.vsu.cs.config.ConnectionProvider;
 import ru.vsu.cs.config.DatabaseConfig;
+import ru.vsu.cs.config.DatabaseMigrator;
 import ru.vsu.cs.repository.jdbc.JdbcClientRepository;
 import ru.vsu.cs.repository.jdbc.JdbcRepairOrderRepository;
 import ru.vsu.cs.service.ClientService;
@@ -19,6 +20,7 @@ public final class ServiceFactory {
 
     public static Services create() {
         DatabaseConfig config = ConfigReader.readDatabaseConfig();
+        DatabaseMigrator.migrate(config);
         ConnectionProvider connectionProvider = new ConnectionProvider(config);
         ClientRepository clientRepository = new JdbcClientRepository(connectionProvider);
         RepairOrderRepository repairOrderRepository = new JdbcRepairOrderRepository(connectionProvider);
