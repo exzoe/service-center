@@ -14,6 +14,22 @@ import java.sql.PreparedStatement;
 import java.util.Optional;
 
 public class JdbcClientRepository implements ClientRepository {
+    private static final String FIND_ALL_SQL =
+            "SELECT id, name, phone FROM clients ORDER BY id";
+    private static final String FIND_BY_ID_SQL =
+            "SELECT id, name, phone FROM clients WHERE id = ?";
+    private static final String CREATE_SQL = """
+            INSERT INTO clients (name, phone)
+            VALUES (?, ?)
+            RETURNING id
+            """;
+    private static final String DELETE_BY_ID_SQL = "DELETE FROM clients WHERE id = ?";
+    private static final String UPDATE_SQL = """
+            UPDATE clients
+            SET name = ?, phone = ?
+            WHERE id = ?
+            """;
+
     private final ConnectionProvider connectionProvider;
 
     public JdbcClientRepository(ConnectionProvider connectionProvider) {
@@ -23,11 +39,10 @@ public class JdbcClientRepository implements ClientRepository {
     @Override
     public List<Client> findAll() {
         List<Client> clients = new ArrayList<>();
-        String sql = "SELECT id, name, phone FROM clients ORDER BY id";
 
         try (Connection connection = connectionProvider.getConnection();
              Statement statement = connection.createStatement();
-             ResultSet result = statement.executeQuery(sql)) {
+             ResultSet result = statement.executeQuery(FIND_ALL_SQL)) {
 
             while (result.next()) {
                 Client client = new Client(
@@ -47,10 +62,8 @@ public class JdbcClientRepository implements ClientRepository {
 
     @Override
     public Optional<Client> findById(long id) {
-        String sql = "SELECT id, name, phone FROM clients WHERE id = ?";
-
         try (Connection connection = connectionProvider.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+             PreparedStatement statement = connection.prepareStatement(FIND_BY_ID_SQL)) {
 
             statement.setLong(1, id);
 
@@ -74,14 +87,8 @@ public class JdbcClientRepository implements ClientRepository {
 
     @Override
     public Client create(String name, String phone) {
-        String sql = """
-            INSERT INTO clients (name, phone)
-            VALUES (?, ?)
-            RETURNING id
-            """;
-
         try (Connection connection = connectionProvider.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+             PreparedStatement statement = connection.prepareStatement(CREATE_SQL)) {
 
             statement.setString(1, name);
             statement.setString(2, phone);
@@ -106,10 +113,8 @@ public class JdbcClientRepository implements ClientRepository {
 
     @Override
     public boolean deleteById(long id) {
-        String sql = "DELETE FROM clients WHERE id = ?";
-
         try (Connection connection = connectionProvider.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+             PreparedStatement statement = connection.prepareStatement(DELETE_BY_ID_SQL)) {
 
             statement.setLong(1, id);
 
@@ -122,14 +127,8 @@ public class JdbcClientRepository implements ClientRepository {
 
     @Override
     public void update(Client client) {
-        String sql = """
-            UPDATE clients
-            SET name = ?, phone = ?
-            WHERE id = ?
-            """;
-
         try (Connection connection = connectionProvider.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+             PreparedStatement statement = connection.prepareStatement(UPDATE_SQL)) {
 
             statement.setString(1, client.getName());
             statement.setString(2, client.getPhone());

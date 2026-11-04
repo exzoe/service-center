@@ -16,6 +16,35 @@ import java.sql.SQLException;
 import java.util.Optional;
 
 public class JdbcRepairOrderRepository implements RepairOrderRepository {
+    private static final String CREATE_SQL = """
+            INSERT INTO repair_orders
+                (client_id, device, problem_description)
+            VALUES (?, ?, ?)
+            RETURNING id
+            """;
+    private static final String FIND_ALL_SQL = """
+            SELECT o.id, o.client_id, o.device,
+                   o.problem_description, o.status,
+                   c.name, c.phone
+            FROM repair_orders o
+            JOIN clients c ON o.client_id = c.id
+            ORDER BY o.id
+            """;
+    private static final String FIND_BY_ID_SQL = """
+            SELECT o.id, o.client_id, o.device,
+                   o.problem_description, o.status,
+                   c.name, c.phone
+            FROM repair_orders o
+            JOIN clients c ON o.client_id = c.id
+            WHERE o.id = ?
+            """;
+    private static final String UPDATE_SQL = """
+            UPDATE repair_orders
+            SET device = ?, problem_description = ?, status = ?
+            WHERE id = ?
+            """;
+    private static final String DELETE_BY_ID_SQL = "DELETE FROM repair_orders WHERE id = ?";
+
     private final ConnectionProvider connectionProvider;
 
     public JdbcRepairOrderRepository(ConnectionProvider connectionProvider) {
@@ -26,15 +55,8 @@ public class JdbcRepairOrderRepository implements RepairOrderRepository {
     public RepairOrder create(
             Client client, String device, String problemDescription) {
 
-        String sql = """
-                INSERT INTO repair_orders
-                    (client_id, device, problem_description)
-                VALUES (?, ?, ?)
-                RETURNING id
-                """;
-
         try (Connection connection = connectionProvider.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+             PreparedStatement statement = connection.prepareStatement(CREATE_SQL)) {
 
             statement.setLong(1, client.getId());
             statement.setString(2, device);
@@ -63,18 +85,9 @@ public class JdbcRepairOrderRepository implements RepairOrderRepository {
     public List<RepairOrder> findAll() {
         List<RepairOrder> orders = new ArrayList<>();
 
-        String sql = """
-            SELECT o.id, o.client_id, o.device,
-                   o.problem_description, o.status,
-                   c.name, c.phone
-            FROM repair_orders o
-            JOIN clients c ON o.client_id = c.id
-            ORDER BY o.id
-            """;
-
         try (Connection connection = connectionProvider.getConnection();
              Statement statement = connection.createStatement();
-             ResultSet result = statement.executeQuery(sql)) {
+             ResultSet result = statement.executeQuery(FIND_ALL_SQL)) {
 
             while (result.next()) {
                 Client client = new Client(
@@ -106,17 +119,8 @@ public class JdbcRepairOrderRepository implements RepairOrderRepository {
 
     @Override
     public Optional<RepairOrder> findById(long id) {
-        String sql = """
-            SELECT o.id, o.client_id, o.device,
-                   o.problem_description, o.status,
-                   c.name, c.phone
-            FROM repair_orders o
-            JOIN clients c ON o.client_id = c.id
-            WHERE o.id = ?
-            """;
-
         try (Connection connection = connectionProvider.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+             PreparedStatement statement = connection.prepareStatement(FIND_BY_ID_SQL)) {
 
             statement.setLong(1, id);
 
@@ -150,14 +154,8 @@ public class JdbcRepairOrderRepository implements RepairOrderRepository {
 
     @Override
     public void update(RepairOrder order) {
-        String sql = """
-            UPDATE repair_orders
-            SET device = ?, problem_description = ?, status = ?
-            WHERE id = ?
-            """;
-
         try (Connection connection = connectionProvider.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+             PreparedStatement statement = connection.prepareStatement(UPDATE_SQL)) {
 
             statement.setString(1, order.getDevice());
             statement.setString(2, order.getProblemDescription());
@@ -178,10 +176,8 @@ public class JdbcRepairOrderRepository implements RepairOrderRepository {
 
     @Override
     public boolean deleteById(long id) {
-        String sql = "DELETE FROM repair_orders WHERE id = ?";
-
         try (Connection connection = connectionProvider.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+             PreparedStatement statement = connection.prepareStatement(DELETE_BY_ID_SQL)) {
 
             statement.setLong(1, id);
 
