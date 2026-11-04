@@ -2,7 +2,9 @@ package ru.vsu.cs.factory;
 
 import ru.vsu.cs.repository.ClientRepository;
 import ru.vsu.cs.repository.RepairOrderRepository;
+import ru.vsu.cs.config.ConfigReader;
 import ru.vsu.cs.config.ConnectionProvider;
+import ru.vsu.cs.config.DatabaseConfig;
 import ru.vsu.cs.repository.jdbc.JdbcClientRepository;
 import ru.vsu.cs.repository.jdbc.JdbcRepairOrderRepository;
 import ru.vsu.cs.service.ClientService;
@@ -16,7 +18,8 @@ public final class ServiceFactory {
     }
 
     public static Services create() {
-        ConnectionProvider connectionProvider = new ConnectionProvider();
+        DatabaseConfig config = ConfigReader.readDatabaseConfig();
+        ConnectionProvider connectionProvider = new ConnectionProvider(config);
         ClientRepository clientRepository = new JdbcClientRepository(connectionProvider);
         RepairOrderRepository repairOrderRepository = new JdbcRepairOrderRepository(connectionProvider);
         ClientService clientService = new ClientService(clientRepository);
